@@ -1,0 +1,188 @@
+# ICT110 Task 2 
+# Name: Sean Sullivan	
+# Student number: 1133330
+# Favourite Pokemon (optional): Dragonite
+
+# Remember to write comments that explain your code.
+
+
+
+# Data setup
+# Write the code you have used to clean and prepare your data. If you used Excel write the steps you took.
+
+#Load the Pokemon data set into Microsoft Excel#
+Open Microsoft Excel > File > Open > Open the location I saved the "Pokemon_Dataset.csv"
+
+#Used the find and replace function in excel to fix the classification column and Japanese_name column#
+Select the classification column > Home tab > Editing > Find & Select > Replace... > 
+Find what: PokÃ* Replace with: Pokemon > Replace all
+
+Select the japanese_name column > Home tab > Editing > Find & Select > Replace... > 
+Find what: Ã* Replace with: > Replace all
+
+#Manually changed Pokemon number 669 to the correct name. Manually changed Nidoran Male and Female to correct entry#
+Select cell with FlabÃƒÂ©bÃƒÂ© > Change to Flabébé
+Select cell with NidoranÃ¢â„¢â‚¬ > Change to Nidoran♀
+Select cell with NidoranÃ¢â„¢â€š > Change to Nidoran♂
+
+#Used Find function to display any cells displaying NA values. Found Rattata, Raticate, Raichu, Sandshrew, Sandslash, 
+Vulpix, Ninetales, Diglett, Dugtrio, Meowth, Persian, Geodude, Graveler, Golem, Grimer, Muk, Exeggutor, Marowak, Hoopa,
+and Lycanroc were missing height and weight values#
+Highlight weight_kg column > Find: NA > Manually added the correct values from 
+https://bulbapedia.bulbagarden.net/wiki/Main_Page
+Highlight height_m column > Find: NA > Manually added the values
+
+
+# Exploratory Data Analysis
+# Write the code you used to prepare the findings for your 2x one variable analysis
+
+# One variable analysis
+
+#Make sure the working directory in R is the same location as the cleaned Pokemon data file#
+File > Change dir... > Pokemon File Location
+
+#Load the cleaned Pokemon data file into R#
+pokemon <- read.csv("Pokemon_dataset_cleaned.csv")
+
+#Check the names of the data columns to decide on which attributes to use for analysis#
+names(pokemon)
+
+#brief summary of the data is done to give an idea on the range of the data#
+summary(pokemon$speed)
+
+#plotted the histogram on pokemon speed#
+hist(pokemon$speed, xlab="Pokemon Speed", xlim=c(0,200),ylab="Pokemon Frequency"
+, ylim=c(0,125), main="Pokemon Speed Analysis",breaks=20, col="red")
+
+# One variable analysis
+
+#brief summary of the data is done to give an idea on the range of the data#
+summary(pokemon$type1)
+
+#plotted the bar graph on Pokemons type1#
+barplot(table(pokemon$type1), main="Pokemon Type1 Spread", xlab="Pokemon Type1"
+, ylab="Pokemon Frequency", ylim=c(0,125), col="blue", density=95)
+
+# Two variable analysis
+# Write the code you used to prepare the findings for your 2x two variable analysis
+
+# Two variable analysis
+
+#Decide which attributes to use for two variable analysis#
+names(pokemon)
+
+#summary is conducted for preliminary findings#
+defense_attributes <- c(pokemon$defense, pokemon$hp)
+summary(defense_attributes)
+
+#plot the pokemon Defense and HP on a scatterplot#
+plot(pokemon$hp, pokemon$defense, pch=16, col="red"
+, main="Pokemon Defense & HP Analysis", xlab="Pokemon Hit Points", ylab="Pokemon Defense")
+
+# Two variable analysis
+
+#a summary of the data is made#
+type1_speed <-c (pokemon$type1, pokemon$speed)
+summary(type1_speed)
+
+#plot the Pokemon type1 and speed on a boxplot#
+boxplot(pokemon$speed ~ pokemon$type1, boxwex=0.5, whisklty=1, outpch=16, main="Pokemon Type1 & Speed Analysis"
+, xlab="Pokemon Type1", ylab="Pokemon Speed", col=c("orange", "blue", "red"), border="brown")
+
+# Advanced Analysis
+# Write the code you used to prepare the findings for the advanced analysis
+
+# Clustering
+
+#Put the data being used in the k-means clustering into a seperate data frame#
+pokemon_stats <- data.frame(SP_attack=c(pokemon$sp_attack), Speed=c(pokemon$speed))
+
+#Install the ggplot2 package for the elbow plot and k-means plot#
+install.packages("ggplot2")
+library(ggplot2)
+
+#plot the elbow curve to determine the number of clusters (k)#
+twss <- 0
+for (i in 1:15) {
+	km.out <- kmeans(pokemon_stats, centers = i, nstart = 20, iter.max = 50)
+	twss[i] <- km.out$tot.withinss
+}
+
+elbow <- data.frame(c(1:15), twss)
+ggplot(elbow, aes(x = c.1.15., y = twss)) + geom_point() + geom_line() + 
+ggtitle("Pokemon Elbow Plot") + xlab("K value") + ylab("TWSS")
+
+#plot the data after deciding on 4 for the k value#
+k <- 4
+km.out <- kmeans(pokemon_stats, centers = k, nstart = 20, iter.max = 50) 
+
+#this has been left as a single line to copy because 
+having it on different rows was messing up on R due to the +'s#
+ggplot(pokemon_stats, aes(x = SP_attack, y = Speed, color = factor(km.out$cluster))) + geom_point() + labs(color = "Cluster") + ggtitle("Pokemon Species, Speed vs. Special Attack")
+
+# Linear regression
+
+#Fitting the model#
+legendary <- lm(is_legendary ~ type1, data = pokemon)
+
+#view a summary of the fitted model#
+summary(legendary)
+
+#Plot the graph of the dataset#
+plot(is_legendary ~ type1, data = pokemon, xlab="Type 1", ylab="Is Legendary?", col="gold")
+
+#Superimpose the learned linear model as a red line#
+abline(lm(legendary), col = "red")
+
+# Linear regression
+
+#Fitting the model#
+attack_stats <- lm(attack ~ sp_attack, data=pokemon)
+
+#view a summary of the fitted model#
+summary(attack_stats)
+
+#Plots a scatterplot of the dataset#
+plot(attack ~ sp_attack, data=pokemon, xlab="Special Attack", ylab="Attack", col="purple")
+
+#Superimpose the learned linear model as a red line#
+abline(lm(attack_stats), col = "red")
+
+# Classification tree
+
+#set the seed value to get the same sequence of random numbers#
+set.seed(111)
+
+#split the data into two sets a training set and a test set with will be 67% and 33%#
+ind <- sample(2, nrow(pokemon), replace=TRUE, prob=c(0.67, 0.33))
+pokemon.training <- pokemon[ind==1, ]
+pokemon.test <- pokemon[ind==2, ]
+
+#check that the data has been correctly partitioned into 67/33#
+summary(pokemon.training$type1)
+summary(pokemon.test$type1)
+
+#import the rpart library which contains the CART decision tree algorithm#
+library(rpart)
+
+#create the decision tree vector#
+pokemon_tree <- rpart(is_legendary ~ hp + attack + defense + sp_attack + sp_defense + speed
++ weight_kg + height_m, data=pokemon.training, method="class")
+
+#import the rpart module for a better looking classification tree and then plotting the tree#
+library("rpart.plot")
+rpart.plot(pokemon_tree)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
